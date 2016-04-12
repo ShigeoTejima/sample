@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Test</title>
+	<style>
+	#files2 {
+		width: 100%;
+		border: 2px dashed #bbb;
+		border-radius: 5px;
+		padding: 25px;
+		text-align: center;
+		color: #bbb;
+	}
+	</style>
+</head>
+<body>
+	<div>
+		<input type="file" name="file" id="files" multiple>
+	</div>
+	<div style="width: 100%">
+		<div id="files2">Drop files here</div>
+	</div>
+	<script>
+	'use strict';
+
+	function x1(event) {
+		let files = event.target.files;
+		for (var i = 0, f; f = files[i]; i++) {
+			let tostring = `file[${i}]: {type: ${f.type}, name: ${f.name}, size: ${f.size}}`;
+			console.log(tostring);
+		}
+	}
+
+	function x2Drop(event) {
+		event.stopPropagation();
+		event.preventDefault();
+
+		let files = event.dataTransfer.files;
+		for (var i = 0, f; f = files[i]; i++) {
+			console.log(f);
+			let tostring = `file[${i}]: {type: ${f.type}, name: ${f.name}, size: ${f.size}}`;
+			console.log(tostring);
+		}
+	}
+	function x2DragOver(event) {
+		event.stopPropagation();
+		event.preventDefault();
+
+		event.dataTransfer.dropEffect = 'copy';
+	}
+
+	document.getElementById('files').addEventListener('change', x1, false);
+	document.getElementById('files2').addEventListener('dragover', x2DragOver, false);
+	document.getElementById('files2').addEventListener('drop', x2Drop, false);
+
+	//
+
+	class Bucket {
+		constructor(path, owner, size = 0, lastModifiedAt = new Date()) {
+			if (toString.call(path) !== "[object String]" || path.trim() === "") {
+				throw "path must not be empty, and String.";
+			}
+			if (toString.call(owner) !== "[object String]" || owner.trim() === "") {
+				throw "owner must not be empty, and String.";
+			}
+			if (toString.call(size) !== "[object Number]" || size < 0) {
+				throw "size must be Number, and not be negative.";
+			}
+			if (toString.call(lastModifiedAt) !== "[object Date]") {
+				throw "lastModifiedAt must be Date.";
+			}
+			this._path = path;
+			this._owner = owner;
+			this._size = size;
+			this._lastModifiedAt = lastModifiedAt;
+			this.devide();
+		}
+		get path() {
+			return this._path;
+		}
+		get size() {
+			return this._size;
+		}
+		get lastModifiedAt() {
+			return this._lastModifiedAt;
+		}
+		get isFile() {
+			return !this.isFolder;
+		}
+		get isFolder() {
+			return this.path.endsWith('/');
+		}
+		get extension() {
+			if (this.isFolder) return "";
+
+			let index = this.name.lastIndexOf(".");
+			return (index < 0) ? "" : this.name.substring(index + 1);
+		}
+		get name() {
+			return this.branches[this.branches.length - 1];
+		}
+		get branches() {
+			return this._branches;
+		}
+		devide() {
+			// TODO this function is better to private function.
+			this._branches = this.path.split("/")
+									  .filter(function(value, index, array){
+									      return (value.length > 0);
+									  });
+		}
+		static of(path, owner) {
+			return Bucket.of(path, owner, 0);
+		}
+		static of(path, owner, size) {
+			return new Bucket(path, owner, size, new Date());
+		}
+		static of(path, owner, size, lastModifiedAt) {
+			return new Bucket(path, owner, size, lastModifiedAt);
+		}
+	}
+	class Buckets extends Array {
+		push(bucket) {
+			this.add(bucket);
+		}
+		add(bucket) {
+			if (!(bucket instanceof Bucket)) {
+				throw "bucket must be Bucket.";
+			}
+			super.push(bucket);
+		}
+	}
+
+	var Foo = (() => {
+		function x() {
+			console.log("Foo.x()");
+		}
+		class Foo {
+			constructor() {
+				x();
+			}
+		}
+		return Foo;
+	})();
+	</script>
+</body>
+</html>
