@@ -2,6 +2,7 @@ package com.example.sample.bean;
 
 import com.example.sample.validator.Date;
 import com.example.sample.validator.NotNullEntry;
+import com.example.sample.validator.SizeEntry;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.AssertTrue;
@@ -15,6 +16,7 @@ public class Bean {
 
     @NotEmpty
     @NotNullEntry
+    @SizeEntry(max = 10)
     private List<String> strings;
 
     @NotEmpty

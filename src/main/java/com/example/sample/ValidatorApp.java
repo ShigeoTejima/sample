@@ -2,7 +2,6 @@ package com.example.sample;
 
 import com.example.sample.bean.Bean;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -21,7 +20,8 @@ public class ValidatorApp {
         Bean bean = new Bean();
         bean.setAaa(true);
 //        bean.setStrings(Collections.emptyList());
-        bean.setStrings(Arrays.asList("foo", null));
+//        bean.setStrings(Arrays.asList("foo", null));
+        bean.setStrings(Arrays.asList("foo", "baaaaaaaaar", "baz"));
         bean.setArray(new String[]{"x", null});
 //        bean.setNestedBeans(Arrays.asList(new Bean.NestedBean("_a"), null));
         bean.setCreatedAt("2016/04/14");
