@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>File download</title>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+</head>
+<body>
+    <div>
+        <ul>
+            <li><a href="/webapp-test/file?name=foo.txt" class="download" name="foo.txt">Foo</a></li>
+            <li><a href="/webapp-test/file?name=bar.xlsx" name="bar.xlsx">bar</a></li>
+            <li><a href="/webapp-test/file?name=baz.zip" target="frameDownload">baz1(target is frame)</a></li>
+            <li><a href="/webapp-test/file?name=baz.zip" target="_blank">baz2(target is _blank)</a></li>
+        </ul>
+    </div>
+    <iframe name="frameDownload" style="display: none;"></iframe>
+    <script>
+    $("a.download").each(function(){
+        var $this = $(this);
+        $this.on("click.download", function(event) {
+            event.preventDefault();
+
+            var $target = $(event.target);
+            var url = $target.attr("href");
+            var name = $target.attr("name"); // TODO get filename from RESPONSE Header'Content-Disposition'?
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url, true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function(event) {
+                if (this.readyState === 4 && this.status === 200) {
+                    var blob = new Blob([this.response], {type: "application/octet-stream"});
+                    if (window.navigator.msSaveBlob) {
+                        window.navigator.msSaveOrOpenBlob(blob, name);
+                    } else {
+                        var url = window.URL.createObjectURL(blob);
+                        var a = document.createElement("a");
+                        a.style = "display: none;"; // FIXME: no need.
+                        a.download = name;
+                        a.href = url;
+                        a.click();
+                    }
+                } else if (this.readyState === 4 && this.status === 404) {
+                    alert("not found!!");
+                }
+
+            };
+            xhr.onerror = function(event) {
+                console.log("fail ");
+                console.log(xhr);
+            };
+            xhr.send();
+        });
+    });
+    </script>
+</body>
+</html>
