@@ -21,12 +21,22 @@
 		fileObjects.add($.explorer.FileObject.of("foo.txt", "owner"));
 
 		$("#explorer_zone").explorer({
-			fileObjects: fileObjects/*,
-			callbackDropFiles: function(files, folder) {
+			fileObjects: fileObjects
+			/*
+			,callbackDropFiles: function(files, folder) {
 				console.log("this is app callback.");
 				console.log(files);
 				console.log(folder);
-			}*/
+			}
+			,callbackOpenFile: function(file) {
+				console.log("this is app callback openfile.");
+				console.log(file);
+			}
+			,callbackOpenFolder: function(folder) {
+				console.log("this is app callback openfolder.");
+				console.log(folder);
+			}
+			*/
 		});
 	});
 

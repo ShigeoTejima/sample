@@ -192,6 +192,16 @@ $.extend($.explorer, {
 				var dropInFolderEvent = $.Event("dropInFolder.explorer")
 				$currentTarget.trigger($.extend(event, dropInFolderEvent), ($currentTarget.data('model') || {}));
 			},
+			dblclickFile: function(event) {
+				var $currentTarget = $(event.currentTarget);
+				var openFileEvent = $.Event("openFile.explorer")
+				$currentTarget.trigger($.extend(event, openFileEvent), ($currentTarget.data('model') || {}));
+			},
+			dblclickFolder: function(event) {
+				var $currentTarget = $(event.currentTarget);
+				var openFolderEvent = $.Event("openFolder.explorer")
+				$currentTarget.trigger($.extend(event, openFolderEvent), ($currentTarget.data('model') || {}));
+			}
 		};
 		class FileObjectView {
 			constructor(options = {}) {
@@ -233,16 +243,18 @@ $.extend($.explorer, {
 				   .append($lastModifiedAt)
 				   .append($filetype)
 			       .append($filesize);
+
+		    	$el.data("model", {path: this.model.path});
+
 			    if (this.model.isFolder) {
 			    	$el.addClass("explorer-fileobjects-folder");
-			    	$el.data("model", {path: this.model.path});
 
-			    	$el.on("dragenter.explorer", eventHandler.dragenter);
-			    	$el.on("dragleave.explorer", eventHandler.dragleave);
-			    	$el.on("drop.explorer", {folder: "folder_a/"}, eventHandler.drop);
-			    	$el.on("dblclick.explorer.folder", function(event) {
-			    		console.log("xxx");
-			    	});
+			    	$el.on("dragenter.explorer.folder", eventHandler.dragenter);
+			    	$el.on("dragleave.explorer.folder", eventHandler.dragleave);
+			    	$el.on("drop.explorer.folder", eventHandler.drop);
+			    	$el.on("dblclick.explorer.folder", eventHandler.dblclickFolder);
+			    } else {
+			    	$el.on("dblclick.explorer.file", eventHandler.dblclickFile);
 			    }
 
 			    return $el;
@@ -319,15 +331,26 @@ $.extend($.explorer, {
 
 	ExplorerView: (() => {
 		var functions = {
+			createFolder: function(folder) {
+				console.log("ExplorerView.functions.createFolder");
+				console.log(folder);
+			},
 			dropFiles: function(files = [], folder) {
 				console.log("ExplorerView.functions.dropFiles");
 				console.log(files);
+				console.log(folder);
+			},
+			openFile: function(file) {
+				console.log("ExplorerView.functions.openFile");
+				console.log(file);
+			},
+			openFolder: function(folder) {
+				console.log("ExplorerView.functions.openFolder");
 				console.log(folder);
 			}
 		};
 		var eventHandler = {
 			dragenter: function(event) {
-//				console.log("ExplorerView.eventHandler.dragEnter");
 			},
 			dragleave: function(event) {
 			},
@@ -362,13 +385,24 @@ $.extend($.explorer, {
 
 				event.stopPropagation();
 				event.preventDefault;
+			},
+			openFile: function(event, data = {}) {
+				var callback = $(event.currentTarget).data("view")._settings.callbackOpenFile;
+				callback(data.path);
+			},
+			openFolder: function(event, data = {}) {
+				var callback = $(event.currentTarget).data("view")._settings.callbackOpenFolder;
+				callback(data.path);
 			}
 		}
 		class ExplorerView {
 			constructor(options = {}) {
 			    var settings = $.extend({
 			    	el: "<div/>",
-			    	callbackDropFiles: functions.dropFiles
+			    	callbackCreateFolder: functions.createFolder,
+			    	callbackDropFiles: functions.dropFiles,
+			    	callbackOpenFile: functions.openFile,
+			    	callbackOpenFolder: functions.openFolder
 				}, options);
 
 			    this._settings = settings;
@@ -394,6 +428,8 @@ $.extend($.explorer, {
 				$el.on("dragleave.explorer", eventHandler.dragleave);
 				$el.on("dragover.explorer", eventHandler.dragover);
 				$el.on("dropInFolder.explorer", eventHandler.dropInFolder);
+				$el.on("openFile.explorer", eventHandler.openFile);
+				$el.on("openFolder.explorer", eventHandler.openFolder);
 
 				$el.data("view", this);
 
