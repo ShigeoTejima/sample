@@ -27,6 +27,7 @@ public class SizeEntryValidator implements ConstraintValidator<SizeEntry, Object
             throw new IllegalArgumentException("value has expected a Collection or Array.");
         }
 
+        boolean isValid = true;
         int index = 0;
         Collection<Object> collection = isArray(value) ? Arrays.asList((Object[])value) : (Collection)value;
         for (Object object : collection) {
@@ -36,17 +37,26 @@ public class SizeEntryValidator implements ConstraintValidator<SizeEntry, Object
             if (object instanceof String) {
                 int length = ((String)object).length();
                 if (length < min || length > max) {
+                    /*
                     ConstraintValidatorContext.ConstraintViolationBuilder violationBuilder = context.buildConstraintViolationWithTemplate(this.message);
                     ConstraintValidatorContext.ConstraintViolationBuilder.LeafNodeContextBuilder leafBuilder = violationBuilder.addBeanNode().inIterable();
                     leafBuilder.atIndex(index);
                     violationBuilder.addConstraintViolation();
                     context.disableDefaultConstraintViolation();
-                    return false;
+                            */
+                    context.buildConstraintViolationWithTemplate(this.message)
+                           .addBeanNode()
+                           .inIterable()
+                           .atKey("hoge")
+//                           .atIndex(index)
+                           .addConstraintViolation()
+                           .disableDefaultConstraintViolation();
+                    isValid = false;
                 }
             }
             index++;
         }
-        return true;
+        return isValid;
     }
 
     private boolean isArray(Object value) {

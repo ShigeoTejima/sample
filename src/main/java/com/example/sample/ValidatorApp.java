@@ -21,13 +21,13 @@ public class ValidatorApp {
         bean.setAaa(true);
 //        bean.setStrings(Collections.emptyList());
 //        bean.setStrings(Arrays.asList("foo", null));
-        bean.setStrings(Arrays.asList("foo", "baaaaaaaaar", "baz"));
+        bean.setStrings(Arrays.asList("foo", "bar", "baaaaaaaaaz"));
         bean.setArray(new String[]{"x", null});
 //        bean.setNestedBeans(Arrays.asList(new Bean.NestedBean("_a"), null));
         bean.setCreatedAt("2016/04/14");
         Set<ConstraintViolation<Bean>> violations = validator.validate(bean);
         for (ConstraintViolation<Bean> violation : violations) {
-            System.out.println(String.format("%s: %s", violation.getPropertyPath(), violation.getMessage()));
+            System.out.println(String.format("%s (leafBean: %s): %s", violation.getPropertyPath(), violation.getLeafBean(), violation.getMessage()));
         }
 
     }

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Test</title>
+	<link rel="stylesheet" href="css/jquery.explorer.css">
+	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<script type="text/javascript" src="js/jquery.explorer.js"></script>
+</head>
+<body>
+
+	<div id="explorer_zone" style="width: 80%; height: 300px; border: 1px solid; padding: 5px">
+	</div>
+
+	<script>
+	$(function(){
+		'use strict';
+
+		var fileObjects = new $.explorer.FileObjects();
+		fileObjects.add($.explorer.FileObject.of("folder_a/", "owner"));
+		fileObjects.add($.explorer.FileObject.of("foo.txt", "owner"));
+
+		$("#explorer_zone").explorer({
+			fileObjects: fileObjects/*,
+			callbackDropFiles: function(files, folder) {
+				console.log("this is app callback.");
+				console.log(files);
+				console.log(folder);
+			}*/
+		});
+	});
+
+	</script>
+</body>
+</html>
