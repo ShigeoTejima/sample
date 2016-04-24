@@ -44,7 +44,9 @@ $.extend($.explorer, {
 					return $.explorer.filetypes["folder"];
 				}
 
-				return $.explorer.filetypes[(!extension) ? "" : extension];
+				var label = $.explorer.filetypes[extension];
+				return (label) ? label : $.explorer.filetypes[""];
+//				return $.explorer.filetypes[(!extension) ? "" : extension];
 			}
 			static displaySize(size) {
 				var unit = "KB";
@@ -66,8 +68,17 @@ $.extend($.explorer, {
 	})(),
 
 	FileObject: (() => {
+		function devide(path) {
+			return path.split("/")
+					   .filter(function(value, index, array){
+						    return (value.length > 0);
+					    });
+		}
+
 	    class FileObject {
-			constructor(path, owner, size = 0, lastModifiedAt = new Date()) {
+			constructor(path, owner, size = 0, lastModifiedAt = new Date(),
+				        fileObjects = null) {
+
 				if (toString.call(path) !== "[object String]" || path.trim() === "") {
 					throw "path must not be empty, and String.";
 				}
@@ -80,11 +91,24 @@ $.extend($.explorer, {
 				if (toString.call(lastModifiedAt) !== "[object Date]") {
 					throw "lastModifiedAt must be Date.";
 				}
+				if (fileObjects && !(fileObjects instanceof $.explorer.FileObjects)) {
+					throw "fileObjects must be $.explorer.FileObjects.";
+				}
+
 				this._path = path;
 				this._owner = owner;
 				this._size = size;
 				this._lastModifiedAt = lastModifiedAt;
-				this.devide();
+
+				if (!this.isFolder && fileObjects) {
+					throw "file cannot has fileObjects.";
+				}
+
+				if (this.isFolder) {
+					this._fileObjects = fileObjects ? fileObjects : new $.explorer.FileObjects();
+				}
+
+				this._branches = devide(path);
 			}
 			get path() {
 				return this._path;
@@ -113,12 +137,23 @@ $.extend($.explorer, {
 			get branches() {
 				return this._branches;
 			}
-			devide() {
-				// TODO this function is better to private function.
-				this._branches = this.path.split("/")
-										  .filter(function(value, index, array){
-										      return (value.length > 0);
-										  });
+			get fileObjects() {
+				return this._fileObjects;
+			}
+			addFolder(foldername, owner) {
+				if (!this.isFolder) {
+					throw "this operation is unsupported.";
+				}
+
+				var fileObject = $.explorer.FileObject.of(this.path + foldername + "/", owner);
+				this._fileObjects.add(fileObject);
+			}
+			addFile(filename, owner, size) {
+				if (!this.isFolder) {
+					throw "this operation is unsupported.";
+				}
+				var fileObject = $.explorer.FileObject.of(this.path + filename, owner, size);
+				this._fileObjects.add(fileObject);
 			}
 			static of(path, owner) {
 				return FileObject.of(path, owner, 0);
@@ -128,6 +163,9 @@ $.extend($.explorer, {
 			}
 			static of(path, owner, size, lastModifiedAt) {
 				return new FileObject(path, owner, size, lastModifiedAt);
+			}
+			static of(path, owner, size, lastModifiedAt, fileObjects) {
+				return new FileObject(path, owner, size, lastModifiedAt, fileObjects);
 			}
 	    };
 
@@ -190,17 +228,17 @@ $.extend($.explorer, {
 
 				var $currentTarget = $(event.currentTarget);
 				var dropInFolderEvent = $.Event("dropInFolder.explorer")
-				$currentTarget.trigger($.extend(event, dropInFolderEvent), ($currentTarget.data('model') || {}));
+				$currentTarget.trigger($.extend(event, dropInFolderEvent), ($currentTarget.data('view') || {}));
 			},
 			dblclickFile: function(event) {
 				var $currentTarget = $(event.currentTarget);
 				var openFileEvent = $.Event("openFile.explorer")
-				$currentTarget.trigger($.extend(event, openFileEvent), ($currentTarget.data('model') || {}));
+				$currentTarget.trigger($.extend(event, openFileEvent), ($currentTarget.data('view') || {}));
 			},
 			dblclickFolder: function(event) {
 				var $currentTarget = $(event.currentTarget);
 				var openFolderEvent = $.Event("openFolder.explorer")
-				$currentTarget.trigger($.extend(event, openFolderEvent), ($currentTarget.data('model') || {}));
+				$currentTarget.trigger($.extend(event, openFolderEvent), ($currentTarget.data('view') || {}));
 			}
 		};
 		class FileObjectView {
@@ -245,6 +283,7 @@ $.extend($.explorer, {
 			       .append($filesize);
 
 		    	$el.data("model", {path: this.model.path});
+				$el.data("view", this);
 
 			    if (this.model.isFolder) {
 			    	$el.addClass("explorer-fileobjects-folder");
@@ -265,6 +304,33 @@ $.extend($.explorer, {
 	})(),
 
 	FileObjectsView: (() => {
+		function collectionSort(collection) {
+	        var clone = $.extend(true, [], collection);
+	        var compareTo = function(a, b) {
+	          if (a < b) {
+	            return -1;
+	          }
+	          if (a > b) {
+	            return 1;
+	          }
+	          return 0;
+	        };
+	        return clone.sort(function (a, b) {
+	          if (a.isFolder) {
+	            if (b.isFolder) {
+	              return compareTo(a.name, b.name);
+	            } else {
+	              return -1;
+	            }
+	          } else {
+	            if (b.isFolder) {
+	              return 1;
+	            } else {
+	              return compareTo(a.name, b.name);
+	            }
+	          }
+	        });
+		}
 		class FileObjectsView {
 			constructor(options = {}) {
 			    var settings = $.extend({el: "<table/>", collection: []}, options);
@@ -291,7 +357,7 @@ $.extend($.explorer, {
 								);
 				var $tbody = $("<tbody/>");
 				var fileObjects = this.collection;
-				fileObjects.forEach(function(fileObject, index) {
+				collectionSort(fileObjects).forEach(function(fileObject, index){
 					var fileObjectView = new $.explorer.FileObjectView({model: fileObject});
 					$tbody.append(fileObjectView.render());
 				});
@@ -303,9 +369,63 @@ $.extend($.explorer, {
 
 				return $el;
 			}
+			update() {
+				var $el = this.el;
+				var $tbody = $el.find("tbody");
+				$tbody.empty();
+				var fileObjects = this.collection;
+				collectionSort(fileObjects).forEach(function(fileObject, index){
+					var fileObjectView = new $.explorer.FileObjectView({model: fileObject});
+					$tbody.append(fileObjectView.render());
+				});
+
+				return $el;
+			}
 		};
 
 		return FileObjectsView;
+	})(),
+
+	ContextMenuView: (() => {
+		class ContextMenuView {
+			constructor() {
+				this._el = $("<div/>");
+			}
+			render() {
+				var $el = this._el;
+				$el.addClass("explorer-contextmenu diactive");
+				var menus = $("<ul/>").append(
+					$("<li/>")
+						.text("Create folder...")
+						.on("click.explorer.contextmenu", function(event){
+							var folder = prompt("Input new folder name.");
+							console.log(folder);
+						})
+				);
+				$el.append(menus);
+
+				var $this = this;
+				$el.on("click.explorer.contextmenu", function(event){
+					$this.deactive();
+				});
+
+				return $el;
+			}
+			active(position = {}) {
+				var $el = this._el;
+				$el.css({top: position.top, left: position.left})
+				   .addClass("active")
+				   .removeClass("diactive");
+				return $el;
+			}
+			deactive() {
+				var $el = this._el;
+				$el.addClass("diactive").removeClass("active");
+				return $el;
+			}
+		};
+
+		return ContextMenuView;
 	})(),
 
 	BlankZoneView: (() => {
@@ -322,6 +442,18 @@ $.extend($.explorer, {
 	    		// auto width and height setting...as available
 	    		$el.css("height", "100%"); // fixme temprary
 
+	    		var contextMenuView = new $.explorer.ContextMenuView();
+	    		$el.append(contextMenuView.render());
+	    		$el.on("contextmenu.explorer", function(event) {
+	    			contextMenuView.active({top: event.pageY, left: event.pageX});
+
+	    			event.preventDefault();
+	    			event.stopPropagation();
+	    		});
+	    		$el.on("click.explorer", function(event){
+	    			contextMenuView.deactive();
+	    		});
+
 	    		return $el;
 	    	}
 	    };
@@ -335,16 +467,22 @@ $.extend($.explorer, {
 				console.log("ExplorerView.functions.createFolder");
 				console.log(folder);
 			},
-			dropFiles: function(files = [], folder) {
+			dropFiles: function(files = [], folder, fileObject) {
 				console.log("ExplorerView.functions.dropFiles");
 				console.log(files);
 				console.log(folder);
+
+				if (fileObject) {
+					$(files).each(function(){
+						fileObject.addFile(this.name, "owner", this.size);
+					});
+				}
 			},
-			openFile: function(file) {
+			openFile: function(file, fileObject) {
 				console.log("ExplorerView.functions.openFile");
 				console.log(file);
 			},
-			openFolder: function(folder) {
+			openFolder: function(folder, fileObject) {
 				console.log("ExplorerView.functions.openFolder");
 				console.log(folder);
 			}
@@ -371,8 +509,11 @@ $.extend($.explorer, {
 					console.log(tostring);
 				}
 
-				var callbackDropFiles = $(event.currentTarget).data("view")._settings.callbackDropFiles;
-				callbackDropFiles(files);
+				var view = $(event.currentTarget).data("view");
+				var fileObject = view._settings.fileObject;
+				var callbackDropFiles = view._settings.callbackDropFiles;
+				callbackDropFiles(files, fileObject.path, fileObject);
+				view._fileObjectsView.update();
 			},
 			dropInFolder: function(event, data = {}) {
 				console.log(event);
@@ -380,19 +521,21 @@ $.extend($.explorer, {
 
 				let files = event.originalEvent.dataTransfer.files;
 
-				var callbackDropFiles = $(event.currentTarget).data("view")._settings.callbackDropFiles;
-				callbackDropFiles(files, data.path);
+				var view = $(event.currentTarget).data("view");
+				var fileObject = view._settings.fileObject;
+				var callbackDropFiles = view._settings.callbackDropFiles;
+				callbackDropFiles(files, data._model.path, data._model);
 
 				event.stopPropagation();
 				event.preventDefault;
 			},
 			openFile: function(event, data = {}) {
 				var callback = $(event.currentTarget).data("view")._settings.callbackOpenFile;
-				callback(data.path);
+				callback(data._model.path, data._model);
 			},
 			openFolder: function(event, data = {}) {
 				var callback = $(event.currentTarget).data("view")._settings.callbackOpenFolder;
-				callback(data.path);
+				callback(data._model.path, data._model);
 			}
 		}
 		class ExplorerView {
@@ -400,9 +543,9 @@ $.extend($.explorer, {
 			    var settings = $.extend({
 			    	el: "<div/>",
 			    	callbackCreateFolder: functions.createFolder,
-			    	callbackDropFiles: functions.dropFiles,
-			    	callbackOpenFile: functions.openFile,
-			    	callbackOpenFolder: functions.openFolder
+			    	callbackDropFiles:    functions.dropFiles,
+			    	callbackOpenFile:     functions.openFile,
+			    	callbackOpenFolder:   functions.openFolder
 				}, options);
 
 			    this._settings = settings;
@@ -415,8 +558,10 @@ $.extend($.explorer, {
 				var $el = this.el;
 
 				$el.addClass("explorer");
-				var fileObjects = this._settings.fileObjects || [];
+				var fileObject = this._settings.fileObject;
+				var fileObjects = fileObject.fileObjects;
 				var fileObjectsView = new $.explorer.FileObjectsView({collection: fileObjects});
+				this._fileObjectsView = fileObjectsView;
 				var blankZoneView = new $.explorer.BlankZoneView();
 
 				$el.append(fileObjectsView.render());
@@ -444,7 +589,7 @@ $.extend($.explorer, {
 (function($){
 
 	var defaults = {
-		fileObjects: []
+		fileObject: $.explorer.FileObject.of("/", "root")
 	};
 	var methods = {
 		init: function(options) {

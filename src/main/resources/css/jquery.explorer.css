@@ -115,3 +115,32 @@
 	background: url('images/txt.png') no-repeat left center;
 	padding-left: 25px;
 }
+
+.explorer-contextmenu {
+	position: absolute;
+	border: 1px solid;
+	background-color: #fff;
+}
+
+.explorer-contextmenu.active {
+	display: block;
+}
+
+.explorer-contextmenu.diactive {
+	display: none;
+}
+
+.explorer-contextmenu ul {
+	list-style: none;
+	padding: 0;
+	margin: 8px 1px;
+}
+
+.explorer-contextmenu li {
+	padding: 0 1em;
+}
+
+.explorer-contextmenu li:hover {
+	background-color: #333;
+	color: #fff;
+}

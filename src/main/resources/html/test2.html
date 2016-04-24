@@ -3,9 +3,10 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Test</title>
-	<link rel="stylesheet" href="css/jquery.explorer.css">
+	<link rel="stylesheet" href="../css/jquery.explorer.css">
 	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
-	<script type="text/javascript" src="js/jquery.explorer.js"></script>
+	<script type="text/javascript" src="../js/jquery.explorer.js"></script>
+	<script type="text/javascript" src="../js/test.js"></script>
 </head>
 <body>
 
@@ -19,8 +20,11 @@
 		var fileObjects = new $.explorer.FileObjects();
 		fileObjects.add($.explorer.FileObject.of("folder_a/", "owner"));
 		fileObjects.add($.explorer.FileObject.of("foo.txt", "owner"));
+		fileObjects.add($.explorer.FileObject.of("bar.png", "owner", 3000));
+		var rootFileObject = $.explorer.FileObject.of("/", "owner", 0, new Date(), fileObjects);
 
 		$("#explorer_zone").explorer({
+			fileObject: rootFileObject,
 			fileObjects: fileObjects
 			/*
 			,callbackDropFiles: function(files, folder) {
