@@ -49,19 +49,11 @@
             <groupId>db2</groupId>
             <artifactId>db2jcc4</artifactId>
             <version>10.5</version>
-            <!--
-            <scope>system</scope>
-            <systemPath>D:/apps/IBM/SQLLIB/java/db2jcc4.jar</systemPath>
-            -->
         </dependency>
         <dependency>
             <groupId>db2</groupId>
             <artifactId>db2jcc_license_cu</artifactId>
             <version>10.5</version>
-            <!--
-            <scope>system</scope>
-            <systemPath>D:/apps/IBM/SQLLIB/java/db2jcc_license_cu.jar</systemPath>
-            -->
         </dependency>
     </dependencies>
 </project>
